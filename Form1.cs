@@ -13,6 +13,10 @@ namespace Chaos_game
     public partial class Form1 : Form
     {
         Point[] points;
+        Point offset;
+        Bitmap img;
+
+        float scale;
 
         private Point[] GetPoints(int n, Point[] initPoints, Point startPoint, int a = 1, int b = 1, int c = 1)
         {
@@ -46,6 +50,9 @@ namespace Chaos_game
         {
             InitializeComponent();
 
+            handled = false;
+            offset = new Point(0, 0);
+            scale = 1f;
             posA.Text = "0, 0";
             posB.Text = "500, 0";
             posC.Text = "0, 500";
@@ -62,31 +69,50 @@ namespace Chaos_game
             probs.Text = string.Format("Probability of A = {0:f}, B = {1:f}, C = {2:f}.", 1.0/3.0, 1.0/3.0, 1.0/3.0);
 
             points = GetPoints(100000, new Point[]{ new Point(0, 0), new Point(500, 0), new Point(0, 500) }, new Point(0, 0), cntA.Value, cntB.Value, cntC.Value);
+            DrawPoints();
 
             mainCanvas.BackColor = Color.White;
-            mainCanvas.Paint += TestDraw;
+            mainCanvas.Paint += DrawImage;
+            mainCanvas.MouseWheel += ChangeScale;
+
+            mainCanvas.Select();
         }
 
-        private void TestDraw(object sender, PaintEventArgs pe)
+        private void ChangeScale(object sender, MouseEventArgs e)
         {
-            Graphics g = pe.Graphics;
-            Pen pen = new Pen(Color.Blue, 1);
+            if (e.Delta > 0)
+                scale /= 2;
+            else if (e.Delta < 0)
+                scale *= 2;
 
-            //g.DrawLine(pen, new Point(dx, H), new Point(dx, 100));
-            //g.DrawLine(pen, new Point(dx, H), new Point(dx + H, H));
+            mainCanvas.Refresh();
+        }
+
+        private void DrawImage(object sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+            g.DrawImage(
+                img,
+                new RectangleF(offset, mainCanvas.Size),
+                new RectangleF(0, img.Height - img.Height*scale, img.Width*scale, img.Height*scale),
+                GraphicsUnit.Pixel
+                );
+        }
+
+        private void DrawPoints()
+        {
+            img = new Bitmap(mainCanvas.Width, mainCanvas.Height);
+
+            var g = Graphics.FromImage(img);
+            Pen pen = new Pen(Color.Blue, 1);
             
             foreach (Point p in points) 
                 g.DrawRectangle(pen, p.X, mainCanvas.Height - p.Y, 1, 1);
-        }
 
-        private void scaleImage(object sender, EventArgs e)
-        {
-            for (int i = 0; i < points.Length; i++) {
-                points[i].X *= 2;
-                points[i].Y *= 2;
-            }
+            //mainCanvas.Image = img;
         }
-
+        
         private void draw_Click(object sender, EventArgs e)
         {
             TextBox[] txts = new TextBox[]{ posA, posB, posC, posX_0 };
@@ -108,7 +134,9 @@ namespace Chaos_game
                 probs.Text = string.Format("Probability of A = {0:f}, B = {1:f}, C = {2:f}.", 1.0*a/sum, 1.0*b/sum, 1.0*c/sum);
 
                 points = GetPoints(iterCnt, new Point[]{ startPts[0], startPts[1], startPts[2] }, startPts[3], cntA.Value, cntB.Value, cntC.Value);
-                
+                DrawPoints();
+
+                mainCanvas.Select();
                 mainCanvas.Refresh();
             } catch (Exception) {
                 MessageBox.Show("Enter correct integer positions of A, B, C, X_0 and count of iterations.");
@@ -134,6 +162,8 @@ namespace Chaos_game
                 mainCanvas.DrawToBitmap(bmp, mainCanvas.Bounds);
                 bmp.Save(svd.FileName);
             }
+
+            mainCanvas.Select();
         }
 
         private void mainCanvas_MouseDown(object sender, MouseEventArgs e)

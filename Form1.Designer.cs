@@ -253,7 +253,8 @@
             this.Controls.Add(this.posB);
             this.Controls.Add(this.posA);
             this.Controls.Add(this.mainCanvas);
-            this.MaximumSize = new System.Drawing.Size(1000, 1000);
+            this.MaximumSize = new System.Drawing.Size(969, 820);
+            this.MinimumSize = new System.Drawing.Size(969, 820);
             this.Name = "Form1";
             this.Text = "Chaos game";
             ((System.ComponentModel.ISupportInitialize)(this.mainCanvas)).EndInit();
