@@ -13,10 +13,13 @@ namespace Chaos_game
     public partial class Form1 : Form
     {
         Point[] points;
-        Point offset;
+        PointF offset;
+        PointF pos;
         Bitmap img;
-
+        RectangleF areaToDraw;
+        bool mousePressed;
         float scale;
+        const float factor = 1.2f;
 
         private Point[] GetPoints(int n, Point[] initPoints, Point startPoint, int a = 1, int b = 1, int c = 1)
         {
@@ -50,8 +53,8 @@ namespace Chaos_game
         {
             InitializeComponent();
 
-            handled = false;
-            offset = new Point(0, 0);
+            pos = new PointF(0f, 0f);
+            mousePressed = false;
             scale = 1f;
             posA.Text = "0, 0";
             posB.Text = "500, 0";
@@ -75,17 +78,70 @@ namespace Chaos_game
             mainCanvas.Paint += DrawImage;
             mainCanvas.MouseWheel += ChangeScale;
 
+            mainCanvas.MouseDown += StartDrag;
+            mainCanvas.MouseMove += Drag;
+            mainCanvas.MouseUp += EndDrag;
+
             mainCanvas.Select();
+        }
+        
+        private void StartDrag(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left) {
+                pos = e.Location;
+                mousePressed = true;
+            }
+        }
+
+        private void Drag(object sender, MouseEventArgs e)
+        {
+            if (mousePressed) {
+                float dx = (e.Location.X - pos.X) * scale * scale;
+                float dy = (e.Location.Y - pos.Y) * scale * scale;
+
+                offset.X -= dx;
+                offset.Y -= dy;
+
+                areaToDraw.X = offset.X / scale;
+                areaToDraw.Y = img.Height - img.Height*scale + offset.Y / scale;
+
+                pos = e.Location;
+
+                mainCanvas.Refresh();
+            }
+        }
+
+        private void EndDrag(object sender, MouseEventArgs e)
+        {
+            if (mousePressed) {
+                float dx = (e.Location.X - pos.X) * scale * scale;
+                float dy = (e.Location.Y - pos.Y) * scale * scale;
+
+                offset.X -= dx;
+                offset.Y -= dy;
+
+                areaToDraw.X = offset.X / scale;
+                areaToDraw.Y = img.Height - img.Height*scale + offset.Y / scale;
+
+                pos = e.Location;
+
+                mousePressed = false;
+                mainCanvas.Refresh();
+            }
         }
 
         private void ChangeScale(object sender, MouseEventArgs e)
         {
             if (e.Delta > 0)
-                scale /= 2;
+                scale /= factor;
             else if (e.Delta < 0)
-                scale *= 2;
+                scale *= factor;
 
-            mainCanvas.Refresh();
+            areaToDraw = new RectangleF(0, img.Height - img.Height*scale, img.Width*scale, img.Height*scale);
+
+            areaToDraw.X = offset.X / scale;
+            areaToDraw.Y = img.Height - img.Height*scale + offset.Y / scale;
+            mainCanvas.Invalidate();
         }
 
         private void DrawImage(object sender, PaintEventArgs e)
@@ -94,8 +150,8 @@ namespace Chaos_game
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
             g.DrawImage(
                 img,
-                new RectangleF(offset, mainCanvas.Size),
-                new RectangleF(0, img.Height - img.Height*scale, img.Width*scale, img.Height*scale),
+                new RectangleF(new PointF(0f, 0f), mainCanvas.Size),
+                areaToDraw,
                 GraphicsUnit.Pixel
                 );
         }
@@ -103,6 +159,9 @@ namespace Chaos_game
         private void DrawPoints()
         {
             img = new Bitmap(mainCanvas.Width, mainCanvas.Height);
+            scale = 1f;
+            areaToDraw = new RectangleF(0, img.Height - img.Height*scale, img.Width*scale, img.Height*scale);
+            offset = new Point(0, 0);
 
             var g = Graphics.FromImage(img);
             Pen pen = new Pen(Color.Blue, 1);
@@ -137,7 +196,7 @@ namespace Chaos_game
                 DrawPoints();
 
                 mainCanvas.Select();
-                mainCanvas.Refresh();
+                mainCanvas.Invalidate();
             } catch (Exception) {
                 MessageBox.Show("Enter correct integer positions of A, B, C, X_0 and count of iterations.");
 
@@ -173,13 +232,13 @@ namespace Chaos_game
                     points[i].X *= 2;
                     points[i].Y *= 2;
                 }
-                mainCanvas.Refresh();
+                mainCanvas.Invalidate();
             } else if (e.Button == MouseButtons.Right) {
                 for (int i = 0; i < points.Length; i++) {
                     points[i].X /= 2;
                     points[i].Y /= 2;
                 }
-                mainCanvas.Refresh();
+                mainCanvas.Invalidate();
             }
         }
     }
