@@ -210,7 +210,7 @@ namespace Chaos_game
 
         private void save_Click(object sender, EventArgs e)
         {
-            Bitmap bmp = new Bitmap(mainCanvas.Height, mainCanvas.Width);
+            Bitmap bmp = img;
 
             SaveFileDialog svd = new SaveFileDialog();
             svd.Filter = "jpeg|*.jpg|bmp|*.bmp|gif|*.gif|png|*.png";
@@ -218,7 +218,6 @@ namespace Chaos_game
             svd.ShowDialog();
 
             if (!string.IsNullOrEmpty(svd.FileName)) {
-                mainCanvas.DrawToBitmap(bmp, mainCanvas.Bounds);
                 bmp.Save(svd.FileName);
             }
 
